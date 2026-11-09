@@ -1,16 +1,31 @@
 import React, { useState, useEffect } from "react";
 
+// Reads saved tasks; returns [] if storage is unavailable or holds bad data,
+// so a corrupted entry can't crash the app on startup.
+function loadTasks() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("tasks"));
+    if (!Array.isArray(saved)) return [];
+    return saved.filter(
+      task => task && typeof task === "object" && typeof task.text === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
 function App() {
 
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("tasks");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [tasks, setTasks] = useState(loadTasks);
 
   const [input, setInput] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    try {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    } catch {
+      // Storage full or blocked: keep working with in-memory tasks.
+    }
   }, [tasks]);
 
   function addTask(e){
